@@ -1,0 +1,43 @@
+html,
+body{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: grid;
+  min-height: 100vh;
+  gap: 10px;
+  grid-template-columns: 350px 1fr;
+  grid-template-rows: 135px 500px 1fr 80px;
+  grid-template-areas:
+    "hd hd"
+    "sd-1-top main"
+    "sd-1-bottom main"
+    "ft ft";
+}
+     .header {
+    text-align: center;
+}
+
+.footer {
+   text-align: left;
+}
+
+
+/* This is a fixed size formatting approach on the header, footer, and body */
+.header,
+.footer {
+  background: steelblue;
+  border: 1px solid black;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.content-body {
+  background-color: forestgreen;
+  margin: 0;
+  padding: 0;
+}

@@ -1,0 +1,130 @@
+<head>
+    <script type="importmap">
+      {
+        "imports": {
+          "@arcgis/core/": "https://js.arcgis.com/4.30/@arcgis/core/"
+        }
+      }
+    </script>
+    <script>
+        window.arcgis = {
+            url: "https://js.arcgis.com/4.30/"
+        };
+    </script>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.30/@arcgis/core/assets/esri/themes/light/main.css" />
+    <script type="module" src="https://js.arcgis.com/map-components/4.30/arcgis-map-components.esm.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header><img src="groceries.svg" style="display: block; margin: 0 auto;" width="700px" height="125px" alt="Skyline"></header>
+
+        <aside class="sidebar-1">
+            Layer Visibility
+            <div class="sidebar-1-top">
+                <arcgis-layer-list reference-element="myMap"></arcgis-layer-list>
+            </div>
+            Legend
+            <div class="sidebar-1-bottom">
+                <arcgis-legend reference-element="myMap"></arcgis-legend>
+            </div>
+        </aside>
+
+        <main>
+            <arcgis-map item-id="e67e6180017a411cae49d3da169290b0" center="-104.95, 39.75" zoom="14" id="myMap" popup-disabled style="height: 500px; width: 100%;"></arcgis-map>
+                <arcgis-zoom slot="top-left"></arcgis-zoom>
+            </arcgis-map>
+            <arcgis-popup></arcgis-popup>
+        </main>
+
+        <script type="module">
+            import FeatureLayer from "https://js.arcgis.com/4.30/@arcgis/core/layers/FeatureLayer.js";
+            import Graphic from "https://js.arcgis.com/4.30/@arcgis/core/Graphic.js";
+
+            const featureLayer = new FeatureLayer({
+                portalItem: {
+                    id: "e7ffbd1115d64f498d11e2871383fa62"
+                },
+                outFields: ["*"]
+            });
+
+            const highlightRenderer = {
+                type: "simple",
+                symbol: {
+                    type: "simple-marker",
+                    color: "red",
+                    size: "10px",
+                    outline: { color: "white", width: 1 }
+                }
+            };
+            const graphicsLayer = new FeatureLayer({
+                title: "Highlighted Stores",
+                source: [],
+                objectIdField: "OBJECTID",
+                fields: [
+                    { name: "OBJECTID", type: "oid" },
+                    { name: "name", type: "string" }
+                ],
+                geometryType: "point",
+                renderer: highlightRenderer
+            });
+
+            const viewElement = document.querySelector("arcgis-map");
+            await viewElement.viewOnReady();
+
+            const popupComponent = document.querySelector("arcgis-popup");
+            await popupComponent.componentOnReady();
+
+            const map = viewElement.map;
+            map.add(featureLayer);
+            map.add(graphicsLayer);
+
+            const view = viewElement.view;
+
+            viewElement.addEventListener("arcgisViewClick", (event) => {
+                const { mapPoint } = event.detail;
+                const queryExtent = view.extent.clone();
+
+                const query = featureLayer.createQuery();
+                query.geometry = queryExtent;
+                query.spatialRelationship = "intersects";
+                query.returnGeometry = true;
+                query.outFields = ["name"];
+
+                featureLayer.queryFeatures(query).then((results) => {
+                    console.log("found" + results.features.length + " stores within the bounding box.");
+                    
+                    let minDist = Infinity;
+                    let nearestStoreName = '';
+
+                    graphicsLayer.applyEdits({
+                        addFeatures: results.features
+                    });
+
+                    results.features.forEach((feature) => {
+                        feature.attributes.OBJECTID = feature.attributes.OBJECTID || Math.floor(Math.random());
+                    
+                    if (feature.geometry) {
+                        const distance = mapPoint.distance(feature.geometry);
+                        if (distance < minDist) {
+                            minDist = distance;
+                            nearestStoreName = feature.attributes.name;
+                        } // Closes if (distance < minDist)
+                }// <-- Closes if (feature.geometry)
+                }); // <-- Make sure the forEach loop is closed here!
+                
+            popupComponent.location = mapPoint;
+          popupComponent.heading = "Nearest Store";
+          popupComponent.content = `Nearest store found ${nearestStoreName} (${(minDist * 69).toFixed(2)} miles)`;
+          popupComponent.open = true;
+
+      }).catch((error) => {
+          console.error("Query failed: ", error);
+      });
+            });
+            </script>
+
+            <footer><span class="lblpreview">Footer</span></footer
+        </div>
+    </body>
+</html>
